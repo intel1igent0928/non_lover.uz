@@ -28,9 +28,9 @@ from aiogram.types import (
 # ──────────────────────────────────────────────────────────────────────────────
 # Конфигурация — читаем из переменных окружения
 # ──────────────────────────────────────────────────────────────────────────────
-BOT_TOKEN      = os.getenv("BOT_TOKEN", "")
-ADMIN_GROUP_ID = int(os.getenv("ADMIN_GROUP_ID", "0"))
-CHANNEL_ID     = int(os.getenv("CHANNEL_ID", "0"))
+BOT_TOKEN      = os.getenv("BOT_TOKEN", "8363820094:AAEWo6kEVUg2_eDiUrluzh13MIjiQQU5ofE")
+ADMIN_GROUP_ID = int(os.getenv("ADMIN_GROUP_ID", "-1003901780296"))
+CHANNEL_ID     = int(os.getenv("CHANNEL_ID", "-1003792661162"))
 CARD_NUMBER    = os.getenv("CARD_NUMBER", "0000 0000 0000 0000")
 
 # ──────────────────────────────────────────────────────────────────────────────
