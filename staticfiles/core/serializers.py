@@ -9,7 +9,7 @@ class BannerSerializer(serializers.ModelSerializer):
 class StoryItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = StoryItem
-        fields = ['image', 'order']
+        fields = ['id', 'image', 'likes', 'shares', 'order']
 
 class StoryCategorySerializer(serializers.ModelSerializer):
     items = StoryItemSerializer(many=True, read_only=True)
