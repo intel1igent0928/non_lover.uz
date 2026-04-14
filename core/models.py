@@ -30,6 +30,8 @@ class StoryCategory(models.Model):
 class StoryItem(models.Model):
     category = models.ForeignKey(StoryCategory, related_name='items', on_delete=models.CASCADE, verbose_name="Категория")
     image = models.ImageField("Изображение", upload_to='stories/')
+    likes = models.PositiveIntegerField("Лайки", default=0)
+    shares = models.PositiveIntegerField("Пересылки", default=0)
     order = models.PositiveIntegerField("Порядок", default=0)
 
     class Meta:

@@ -10,6 +10,7 @@ let categoryData = {};
 let animationsStarted = false;
 let isFetching = false;
 let isAppInitialized = false;
+let allCategories = []; // List of category objects
 
 // ---------------------------------------------------------
 // Helper: Split Text
@@ -74,6 +75,8 @@ async function startApp() {
         const features = await featuresRes.json();
         const socialLinks = await socialRes.json();
 
+        allCategories = galleries;
+
         // 1. Update Banner (Hero)
         if (banners.length > 0) {
             const b = banners[0];
@@ -93,7 +96,7 @@ async function startApp() {
         if (listContainer) {
             listContainer.innerHTML = "";
             galleries.forEach(cat => {
-                categoryData[cat.name] = cat.items.map(item => item.image);
+                categoryData[cat.name] = cat.items;
                 const preview = document.createElement("div");
                 preview.className = "story-preview";
                 preview.dataset.category = cat.name;
@@ -229,10 +232,111 @@ function initGalleryUI() {
     const closeBtn = modal.querySelector(".story-close");
     const nextBtn = modal.querySelector(".story-next");
     const prevBtn = modal.querySelector(".story-prev");
+    const likeBtn = modal.querySelector(".like-btn");
+    const shareBtn = modal.querySelector(".share-btn");
 
     closeBtn.onclick = closeStoryModal;
     nextBtn.onclick = (e) => { e.stopPropagation(); navigateStory(1); };
     prevBtn.onclick = (e) => { e.stopPropagation(); navigateStory(-1); };
+
+    likeBtn.onclick = (e) => {
+        e.stopPropagation();
+        const story = categoryData[currentCategory][currentStoryIndex];
+        handleLike(story.id);
+    };
+
+    shareBtn.onclick = (e) => {
+        e.stopPropagation();
+        const story = categoryData[currentCategory][currentStoryIndex];
+        handleShare(story.id);
+    };
+
+    initSwipeHandlers();
+}
+
+function initSwipeHandlers() {
+    const modal = document.getElementById("story-modal");
+    if (!modal) return;
+
+    modal.style.touchAction = 'none'; // Prevent browser gestures
+
+    let startX = 0;
+    let isDragging = false;
+
+    // Touch events
+    modal.addEventListener('touchstart', e => {
+        startX = e.changedTouches[0].clientX;
+    }, { passive: true });
+
+    modal.addEventListener('touchend', e => {
+        const endX = e.changedTouches[0].clientX;
+        handleGesture(startX, endX);
+    }, { passive: true });
+
+    // Mouse events (for desktop testing)
+    modal.addEventListener('mousedown', e => {
+        startX = e.clientX;
+        isDragging = true;
+    });
+
+    modal.addEventListener('mouseup', e => {
+        if (!isDragging) return;
+        const endX = e.clientX;
+        handleGesture(startX, endX);
+        isDragging = false;
+    });
+
+    modal.addEventListener('mouseleave', () => {
+        isDragging = false;
+    });
+
+    function handleGesture(sX, eX) {
+        const threshold = 50;
+        const diff = eX - sX;
+
+        if (Math.abs(diff) > threshold) {
+            if (diff > 0) {
+                console.log("Swipe Right -> Prev Category");
+                navigateCategory(-1);
+            } else {
+                console.log("Swipe Left -> Next Category");
+                navigateCategory(1);
+            }
+        }
+    }
+}
+
+function navigateCategory(direction) {
+    const currentIndex = allCategories.findIndex(cat => cat.name === currentCategory);
+    let nextIndex = currentIndex + direction;
+
+    if (nextIndex >= 0 && nextIndex < allCategories.length) {
+        const modalContainer = document.querySelector(".story-image-container");
+
+        // Animation Out
+        gsap.to(modalContainer, {
+            x: direction > 0 ? -100 : 100,
+            opacity: 0,
+            duration: 0.3,
+            ease: "power2.in",
+            onComplete: () => {
+                currentCategory = allCategories[nextIndex].name;
+                currentStoryIndex = 0;
+
+                const stories = categoryData[currentCategory];
+                renderProgressBars(stories.length);
+                updateStoryView(0);
+
+                // Animation In
+                gsap.fromTo(modalContainer,
+                    { x: direction > 0 ? 100 : -100, opacity: 0 },
+                    { x: 0, opacity: 1, duration: 0.4, ease: "power2.out" }
+                );
+            }
+        });
+    } else {
+        closeStoryModal();
+    }
 }
 
 // ---------------------------------------------------------
@@ -265,10 +369,16 @@ function updateStoryView(index) {
     const storyImg = document.getElementById("story-image");
     const modal = document.getElementById("story-modal");
 
-    if (index < 0 || index >= stories.length) return closeStoryModal();
+    if (index < 0) return navigateCategory(-1);
+    if (index >= stories.length) return navigateCategory(1);
 
     currentStoryIndex = index;
-    storyImg.src = stories[index];
+    const story = stories[index];
+    storyImg.src = story.image;
+
+    // Reset like button state
+    const likeBtn = modal.querySelector(".like-btn");
+    likeBtn.classList.remove("liked");
 
     const fills = modal.querySelectorAll(".story-progress-fill");
     if (storyProgressTl) storyProgressTl.kill();
@@ -283,6 +393,58 @@ function updateStoryView(index) {
         width: "100%", duration: 5, ease: "none",
         onComplete: () => updateStoryView(currentStoryIndex + 1)
     });
+}
+
+async function handleLike(itemId) {
+    console.log("Liking item:", itemId);
+    try {
+        const res = await fetch(`${API_BASE}/story-item/${itemId}/like/`, { method: 'POST' });
+        console.log("Like response status:", res.status);
+        const data = await res.json();
+        console.log("Like data:", data);
+        if (data.status === 'liked') {
+            triggerHeartAnimation();
+            const likeBtn = document.querySelector('.like-btn');
+            likeBtn.classList.add('liked');
+        }
+    } catch (e) {
+        console.error("Like failed:", e);
+    }
+}
+
+async function handleShare(itemId) {
+    console.log("Sharing item:", itemId);
+    try {
+        const res = await fetch(`${API_BASE}/story-item/${itemId}/share/`, { method: 'POST' });
+        console.log("Share response status:", res.status);
+        const story = categoryData[currentCategory][currentStoryIndex];
+        const shareData = {
+            title: 'Zakvaskali Non',
+            text: 'Haqiqiy zakvaskali non tayyorlashni o`rganing!',
+            url: window.location.origin + story.image
+        };
+        if (navigator.share) {
+            await navigator.share(shareData);
+        } else {
+            await navigator.clipboard.writeText(shareData.url);
+            alert("Havola nusxalandi!");
+        }
+    } catch (e) {
+        console.error("Share failed:", e);
+    }
+}
+
+function triggerHeartAnimation() {
+    const heart = document.querySelector('.big-heart');
+    if (!heart) return;
+    gsap.fromTo(heart,
+        { scale: 0, opacity: 0 },
+        {
+            scale: 1, opacity: 1, duration: 0.4, ease: "back.out(1.7)", onComplete: () => {
+                gsap.to(heart, { scale: 0, opacity: 0, duration: 0.3, delay: 0.8 });
+            }
+        }
+    );
 }
 
 function navigateStory(direction) {

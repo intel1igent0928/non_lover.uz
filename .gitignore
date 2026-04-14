@@ -1,0 +1,18 @@
+# venv
+venv/
+.venv/
+env/
+.env
+
+# staticfiles (should be generated on build)
+staticfiles/
+
+# media (ephemeral anyway, better not to commit)
+media/
+
+# sqlite
+*.sqlite3
+
+# pycache
+__pycache__/
+*.pyc

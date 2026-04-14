@@ -1,8 +1,9 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
-from .models import Banner, StoryCategory, SiteContent, CourseFeature, SplashLink, SocialLink
+from rest_framework.decorators import action
+from .models import Banner, StoryCategory, StoryItem, SiteContent, CourseFeature, SplashLink, SocialLink
 from .serializers import (
-    BannerSerializer, StoryCategorySerializer, 
+    BannerSerializer, StoryCategorySerializer, StoryItemSerializer,
     SiteContentSerializer, CourseFeatureSerializer, 
     SplashLinkSerializer, SocialLinkSerializer
 )
@@ -14,6 +15,32 @@ class BannerViewSet(viewsets.ReadOnlyModelViewSet):
 class StoryCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = StoryCategory.objects.all().prefetch_related('items')
     serializer_class = StoryCategorySerializer
+
+from rest_framework import permissions
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
+class StoryItemViewSet(viewsets.GenericViewSet):
+    queryset = StoryItem.objects.all()
+    serializer_class = StoryItemSerializer
+    authentication_classes = [] # Disable CSRF check by disabling session authentication
+    permission_classes = [permissions.AllowAny]
+
+    @method_decorator(csrf_exempt)
+    @action(detail=True, methods=['post'])
+    def like(self, request, pk=None):
+        item = self.get_object()
+        item.likes += 1
+        item.save()
+        return Response({'status': 'liked', 'likes': item.likes})
+
+    @method_decorator(csrf_exempt)
+    @action(detail=True, methods=['post'])
+    def share(self, request, pk=None):
+        item = self.get_object()
+        item.shares += 1
+        item.save()
+        return Response({'status': 'shared', 'shares': item.shares})
 
 class SiteContentViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = SiteContent.objects.all()
