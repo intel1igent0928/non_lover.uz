@@ -4,6 +4,7 @@ import asyncio
 import logging
 import sys
 from aiogram import Bot, Dispatcher
+from aiogram.fsm.storage.memory import MemoryStorage
 from bot.config import BOT_TOKEN
 from bot.handlers import router
 
@@ -15,9 +16,9 @@ async def main():
         stream=sys.stdout
     )
 
-    # Инициализация бота и диспетчера
+    # Инициализация бота и диспетчера c хранилищем для FSM
     bot = Bot(token=BOT_TOKEN)
-    dp = Dispatcher()
+    dp = Dispatcher(storage=MemoryStorage())
     
     # Регистрация роутеров
     dp.include_router(router)

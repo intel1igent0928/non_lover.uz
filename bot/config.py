@@ -1,7 +1,13 @@
 # bot/config.py
 
-BOT_TOKEN = "8363820094:AAEWo6kEVUg2_eDiUrluzh13MIjiQQU5ofE"
-ADMIN_ID = 2041703880
-ADMIN_GROUP_ID = -1003901780296 # Updated with correct ID from /get_id
-CHANNEL_ID = -1003792661162 # Added -100 prefix for private channel
-CARD_NUMBER = "8600 0000 0000 0000" # Replace with actual card number
+import os
+from dotenv import load_dotenv
+
+# Загружаем переменные из .env
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_ID = int(os.getenv("ADMIN_ID", 0))
+ADMIN_GROUP_ID = int(os.getenv("ADMIN_GROUP_ID", 0))
+CHANNEL_ID = int(os.getenv("CHANNEL_ID", 0))
+CARD_NUMBER = os.getenv("CARD_NUMBER", "8600 0000 0000 0000")
